@@ -5,6 +5,6 @@ language: python
 python:
   - "3.7"
 install:
-  - pip install --upgrade cython
+  - pip install --upgrade cython scipy numpy
   - pip install -r requirements.txt
 script: python -m unittest
