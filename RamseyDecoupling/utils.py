@@ -1,28 +1,39 @@
 from .core import Evolution, DistanceStats
 
 
-def compute_complete_unitary(ev: Evolution, tau, rn, exact=False):
+def compute_complete_unitary(ev: Evolution, tau, rn, verbose=False, exact=False):
     def outpt(DD, fo, txt):
-        print(txt, fo)
+        if verbose:
+            print(txt, fo)
         fid, proj = DistanceStats.unitary_diff_stats(DD, fo)
-        print("fidelity: ", fid)
-        print("projection traces: ", proj)
-        print("\n")
         
-    print(str(ev.pulse) + " Series")
-    
-    print(rn, "\n")
+        if verbose:
+            print("fidelity: ", fid)
+            print("projection traces: ", proj)
+            print("\n")
+        
+        return fid, proj
+        
+    if verbose:
+        print(str(ev.pulse) + " Series")
+        print(rn, "\n")
 
+    fids, projs = [], []
     for N in rn:
-        print("N=", N)
+        if verbose: print("N=", N)
         _, DD = ev.get_states_optimized(N, tau )
         
-        print("true mat: \n", DD)
-        print("\n")
+        if verbose:
+            print("true mat: \n", DD)
+            print("\n")
         
         fo = ev.first_order_exp(N * tau, 0)
-        outpt(DD, fo, "1st ord approx (slow varying):")
+        fid, proj = outpt(DD, fo, "1st ord approx (slow varying):")
+        fids.append(fid)
+        fids.append(proj)
         
         if exact:
             fo_ex = ev.first_order_exp_exact(tau, N * tau, 0)
             outpt(DD, fo_ex, "1st ord approx (slow varying):")
+            
+    return fids, projs
