@@ -86,13 +86,11 @@ def get_states_optimized_helper(seqs):
     
     state_list = [state]
     
-    i = 0
-    for seq in seqs:
+    for i, seq in enumerate(seqs):
         state = seq * state
         if i % 2 == 0:
             state_list += [state]
         dd = seq * dd
-        i+=1
         
     return state_list, dd
     
@@ -101,24 +99,23 @@ def get_states_optimized(N, ev: Evolution, tau):
     seqs = [ev.seq(i * tau, (i+1) * tau) for i in range(N)]
     return get_states_optimized_helper(seqs)
 
-def get_unitaries_diff_proj(u, up=identity(2)):
+def get_unitary_res(u, up=identity(2)):
+    return u @ np.array(up).transpose().conj() # should approach id
+
+def get_unitaries_diff_proj(u):
     '''get projection of difference between two unitaries '''
-    
-    unitary_res = u @ np.array(up).transpose().conj() # should approach id
-    
-    for p, l in [(identity(2), 'id'), (sigmax(),'x'), (sigmay(),'y'), (sigmaz(),'z')]:
-        print(l,
-              np.array([np.matmul(unitary_res, b).trace() for b in [identity(2), sigmax(), sigmay(), sigmaz()] ])
-             ) # trace dist
+
+    unitary_res = get_unitary_res(u)
+    return [(l, (unitary_res @ b).trace()) for l, b in [('id', identity(2)), ('X', sigmax()), ('Y', sigmay()), ('Z', sigmaz())] ]
     
 def get_unitaries_diff_fidelity(u,up=identity(2)):
     '''get projection of difference between two unitaries '''
     
-    unitary_res = u @ np.array(up).transpose().conj()
-    print( 'fidelity = ', ( np.abs(np.trace(unitary_res))/2)**2 )
+    unitary_res = get_unitary_res(u)
+    return (np.abs(np.trace(unitary_res))/2)**2
     
     
-def compute_complete_unitary(ev: Evolution, tau):
+def compute_complete_unitary(ev: Evolution, tau, exact=False):
         
     print("Compute "+ str(ev.pulse) + " Series")
     #rn = np.linspace(100, 1000000, 6, dtype=int)
@@ -128,20 +125,23 @@ def compute_complete_unitary(ev: Evolution, tau):
     for N in rn:
         print("N=", N)
         _, DD = get_states_optimized(N, ev, tau )
-
-        fo = ev.first_order_exp(N * tau, 0)
         
         print("true mat: \n", DD)
         print("\n")
         
+        fo = ev.first_order_exp(N * tau, 0)
+        
         print("1st ord approx (slow varying):\n", fo)
-        get_unitaries_diff_fidelity(DD, fo)
-        get_unitaries_diff_proj(DD, fo)
+        fid = get_unitaries_diff_fidelity(DD, fo)
+        print("fidelity: ", fid)
+        proj = get_unitaries_diff_proj(DD, fo)
+        print("projection tr-dists: ", proj)
         print("\n")
         
-        fo_ex = ev.first_order_exp_exact(tau, N * tau, 0)
-        
-        print("1st ord approx:\n", fo_ex)
-        get_unitaries_diff_fidelity(DD, fo_ex)
-        get_unitaries_diff_proj(DD, fo_ex)
-        print("\n")
+        if exact:
+            fo_ex = ev.first_order_exp_exact(tau, N * tau, 0)
+
+            print("1st ord approx:\n", fo_ex)
+            get_unitaries_diff_fidelity(DD, fo_ex)
+            get_unitaries_diff_proj(DD, fo_ex)
+            print("\n")
