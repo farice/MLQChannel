@@ -97,7 +97,7 @@ class Evolution:
 class DistanceStats:
     @staticmethod
     def unitary_res(u, up):
-        return u @ np.array(up).transpose().conj() # should approach id
+        return u @ np.array(up).transpose().conj()
 
     @staticmethod
     def unitary_diff_proj(u, up):
