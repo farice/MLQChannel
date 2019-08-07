@@ -99,19 +99,19 @@ def get_states_optimized(N, ev: Evolution, tau):
     seqs = [ev.seq(i * tau, (i+1) * tau) for i in range(N)]
     return get_states_optimized_helper(seqs)
 
-def get_unitary_res(u, up=identity(2)):
+def get_unitary_res(u, up):
     return u @ np.array(up).transpose().conj() # should approach id
 
-def get_unitaries_diff_proj(u):
+def get_unitaries_diff_proj(u, up):
     '''get projection of difference between two unitaries '''
 
-    unitary_res = get_unitary_res(u)
-    return [(l, (unitary_res @ b).trace()) for l, b in [('id', identity(2)), ('X', sigmax()), ('Y', sigmay()), ('Z', sigmaz())] ]
+    unitary_res = get_unitary_res(u, up)
+    return [(l, (unitary_res * b).trace()) for l, b in [('id', identity(2)), ('X', sigmax()), ('Y', sigmay()), ('Z', sigmaz())] ]
     
-def get_unitaries_diff_fidelity(u,up=identity(2)):
+def get_unitaries_diff_fidelity(u, up):
     '''get projection of difference between two unitaries '''
     
-    unitary_res = get_unitary_res(u)
+    unitary_res = get_unitary_res(u, up)
     return (np.abs(np.trace(unitary_res))/2)**2
     
     
@@ -135,7 +135,7 @@ def compute_complete_unitary(ev: Evolution, tau, exact=False):
         fid = get_unitaries_diff_fidelity(DD, fo)
         print("fidelity: ", fid)
         proj = get_unitaries_diff_proj(DD, fo)
-        print("projection tr-dists: ", proj)
+        print("projection traces: ", proj)
         print("\n")
         
         if exact:
